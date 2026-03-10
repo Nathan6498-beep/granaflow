@@ -12,6 +12,18 @@ type Transacao = {
   type: string
 }
 
+const coresCategorias: Record<string, string> = {
+  "Alimentação": "#3b82f6",
+  "Transporte": "#22c55e",
+  "Moradia": "#f97316",
+  "Saúde": "#ef4444",
+  "Lazer": "#a855f7",
+  "Assinaturas": "#eab308",
+  "Salário": "#14b8a6",
+  "Freelance": "#0ea5e9",
+  "Outros": "#6b7280",
+}
+
 export default function Transacoes() {
   const [tipo, setTipo] = useState("expense")
   const [descricao, setDescricao] = useState("")
@@ -107,6 +119,7 @@ export default function Transacoes() {
     setCategoria(transacao.category)
     setData(transacao.date)
     setEditandoId(transacao.id)
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   async function atualizarTransacao() {
@@ -191,13 +204,25 @@ export default function Transacoes() {
   }
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-      <div style={{ marginBottom: "30px" }}>
-        <h1 style={{ fontSize: "42px", marginBottom: "10px" }}>
-          💳 Transações
+    <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
+      <div style={{ marginBottom: "28px" }}>
+        <h1
+          style={{
+            fontSize: "36px",
+            margin: 0,
+            color: "#0f172a",
+          }}
+        >
+          Transações
         </h1>
-        <p style={{ color: "#666", fontSize: "16px" }}>
-          Gerencie receitas e despesas de forma simples e visual.
+        <p
+          style={{
+            marginTop: "8px",
+            color: "#64748b",
+            fontSize: "15px",
+          }}
+        >
+          Registre e acompanhe suas receitas e despesas.
         </p>
       </div>
 
@@ -205,21 +230,21 @@ export default function Transacoes() {
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "20px",
-          marginBottom: "35px",
+          gap: "18px",
+          marginBottom: "28px",
         }}
       >
         <div
           style={{
             background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
             color: "white",
-            padding: "24px",
-            borderRadius: "16px",
+            padding: "22px",
+            borderRadius: "18px",
             boxShadow: "0 8px 20px rgba(37,99,235,0.2)",
           }}
         >
           <div style={{ fontSize: "14px", opacity: 0.9 }}>Saldo</div>
-          <div style={{ fontSize: "32px", fontWeight: "bold", marginTop: "10px" }}>
+          <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold" }}>
             R$ {saldo.toFixed(2)}
           </div>
         </div>
@@ -228,13 +253,13 @@ export default function Transacoes() {
           style={{
             background: "linear-gradient(135deg, #14b8a6, #0f766e)",
             color: "white",
-            padding: "24px",
-            borderRadius: "16px",
+            padding: "22px",
+            borderRadius: "18px",
             boxShadow: "0 8px 20px rgba(20,184,166,0.2)",
           }}
         >
           <div style={{ fontSize: "14px", opacity: 0.9 }}>Receitas</div>
-          <div style={{ fontSize: "32px", fontWeight: "bold", marginTop: "10px" }}>
+          <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold" }}>
             R$ {receitas.toFixed(2)}
           </div>
         </div>
@@ -243,13 +268,13 @@ export default function Transacoes() {
           style={{
             background: "linear-gradient(135deg, #ef4444, #dc2626)",
             color: "white",
-            padding: "24px",
-            borderRadius: "16px",
+            padding: "22px",
+            borderRadius: "18px",
             boxShadow: "0 8px 20px rgba(239,68,68,0.2)",
           }}
         >
           <div style={{ fontSize: "14px", opacity: 0.9 }}>Despesas</div>
-          <div style={{ fontSize: "32px", fontWeight: "bold", marginTop: "10px" }}>
+          <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold" }}>
             R$ {despesas.toFixed(2)}
           </div>
         </div>
@@ -259,24 +284,31 @@ export default function Transacoes() {
         style={{
           background: "#ffffff",
           border: "1px solid #e5e7eb",
-          borderRadius: "16px",
+          borderRadius: "20px",
           padding: "24px",
-          marginBottom: "35px",
+          marginBottom: "28px",
           boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
         }}
       >
-        <h2 style={{ marginTop: 0, marginBottom: "20px" }}>
+        <h2 style={{ marginTop: 0, marginBottom: "20px", color: "#0f172a" }}>
           {editandoId ? "Editar transação" : "Nova transação"}
         </h2>
 
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: "12px",
+          }}
+        >
           <select
             value={tipo}
             onChange={(e) => setTipo(e.target.value)}
             style={{
-              padding: "10px 12px",
-              borderRadius: "10px",
+              padding: "12px 14px",
+              borderRadius: "12px",
               border: "1px solid #d1d5db",
+              background: "white",
             }}
           >
             <option value="expense">Despesa</option>
@@ -288,10 +320,9 @@ export default function Transacoes() {
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             style={{
-              padding: "10px 12px",
-              borderRadius: "10px",
+              padding: "12px 14px",
+              borderRadius: "12px",
               border: "1px solid #d1d5db",
-              minWidth: "220px",
             }}
           />
 
@@ -301,10 +332,9 @@ export default function Transacoes() {
             value={valor}
             onChange={(e) => setValor(e.target.value)}
             style={{
-              padding: "10px 12px",
-              borderRadius: "10px",
+              padding: "12px 14px",
+              borderRadius: "12px",
               border: "1px solid #d1d5db",
-              minWidth: "140px",
             }}
           />
 
@@ -312,9 +342,10 @@ export default function Transacoes() {
             value={categoria}
             onChange={(e) => setCategoria(e.target.value)}
             style={{
-              padding: "10px 12px",
-              borderRadius: "10px",
+              padding: "12px 14px",
+              borderRadius: "12px",
               border: "1px solid #d1d5db",
+              background: "white",
             }}
           >
             <option value="">Selecione uma categoria</option>
@@ -334,25 +365,26 @@ export default function Transacoes() {
             value={data}
             onChange={(e) => setData(e.target.value)}
             style={{
-              padding: "10px 12px",
-              borderRadius: "10px",
+              padding: "12px 14px",
+              borderRadius: "12px",
               border: "1px solid #d1d5db",
             }}
           />
         </div>
 
-        <div style={{ marginTop: "16px", display: "flex", gap: "10px" }}>
+        <div style={{ marginTop: "16px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
           {editandoId ? (
             <>
               <button
                 onClick={atualizarTransacao}
                 style={{
-                  padding: "10px 16px",
-                  borderRadius: "10px",
+                  padding: "12px 18px",
+                  borderRadius: "12px",
                   border: "none",
                   background: "#2563eb",
                   color: "white",
                   cursor: "pointer",
+                  fontWeight: "bold",
                 }}
               >
                 Atualizar
@@ -361,11 +393,12 @@ export default function Transacoes() {
               <button
                 onClick={limparFormulario}
                 style={{
-                  padding: "10px 16px",
-                  borderRadius: "10px",
+                  padding: "12px 18px",
+                  borderRadius: "12px",
                   border: "1px solid #d1d5db",
                   background: "white",
                   cursor: "pointer",
+                  fontWeight: "bold",
                 }}
               >
                 Cancelar
@@ -375,15 +408,16 @@ export default function Transacoes() {
             <button
               onClick={adicionarTransacao}
               style={{
-                padding: "10px 16px",
-                borderRadius: "10px",
+                padding: "12px 18px",
+                borderRadius: "12px",
                 border: "none",
                 background: "#2563eb",
                 color: "white",
                 cursor: "pointer",
+                fontWeight: "bold",
               }}
             >
-              Adicionar
+              Adicionar transação
             </button>
           )}
         </div>
@@ -393,15 +427,17 @@ export default function Transacoes() {
         style={{
           background: "#ffffff",
           border: "1px solid #e5e7eb",
-          borderRadius: "16px",
+          borderRadius: "20px",
           padding: "24px",
           boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
         }}
       >
-        <h2 style={{ marginTop: 0, marginBottom: "20px" }}>Histórico de transações</h2>
+        <h2 style={{ marginTop: 0, marginBottom: "20px", color: "#0f172a" }}>
+          Histórico de transações
+        </h2>
 
         {lista.length === 0 ? (
-          <p>Nenhuma transação cadastrada.</p>
+          <p style={{ color: "#64748b" }}>Nenhuma transação cadastrada.</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {lista.map((item) => (
@@ -413,14 +449,16 @@ export default function Transacoes() {
                   gap: "12px",
                   alignItems: "center",
                   padding: "16px",
-                  borderRadius: "12px",
-                  background: "#f9fafb",
+                  borderRadius: "14px",
+                  background: "#f8fafc",
                   border: "1px solid #e5e7eb",
                 }}
               >
                 <div>
-                  <div style={{ fontWeight: "bold" }}>{item.description}</div>
-                  <div style={{ fontSize: "13px", color: "#666" }}>
+                  <div style={{ fontWeight: "bold", color: "#0f172a" }}>
+                    {item.description}
+                  </div>
+                  <div style={{ fontSize: "13px", color: "#64748b" }}>
                     {item.type === "income" ? "Receita" : "Despesa"}
                   </div>
                 </div>
@@ -428,12 +466,13 @@ export default function Transacoes() {
                 <div>
                   <span
                     style={{
-                      background: "#eef2ff",
-                      color: "#3730a3",
+                      background: "#eff6ff",
+                      color: coresCategorias[item.category] || "#1d4ed8",
                       padding: "6px 10px",
                       borderRadius: "999px",
                       fontSize: "13px",
                       fontWeight: "bold",
+                      display: "inline-block",
                     }}
                   >
                     {item.category}
@@ -449,17 +488,20 @@ export default function Transacoes() {
                   {item.type === "income" ? "+" : "-"}R$ {item.amount.toFixed(2)}
                 </div>
 
-                <div style={{ color: "#666" }}>{formatarData(item.date)}</div>
+                <div style={{ color: "#64748b" }}>
+                  {formatarData(item.date)}
+                </div>
 
-                <div style={{ display: "flex", gap: "8px" }}>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                   <button
                     onClick={() => editarTransacao(item)}
                     style={{
                       padding: "8px 12px",
-                      borderRadius: "8px",
+                      borderRadius: "10px",
                       border: "1px solid #d1d5db",
                       background: "white",
                       cursor: "pointer",
+                      fontWeight: "bold",
                     }}
                   >
                     Editar
@@ -469,11 +511,12 @@ export default function Transacoes() {
                     onClick={() => excluirTransacao(item.id)}
                     style={{
                       padding: "8px 12px",
-                      borderRadius: "8px",
+                      borderRadius: "10px",
                       border: "none",
                       background: "#dc2626",
                       color: "white",
                       cursor: "pointer",
+                      fontWeight: "bold",
                     }}
                   >
                     Excluir
