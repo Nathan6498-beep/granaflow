@@ -11,6 +11,8 @@ export default function RootLayout({
 }) {
   const [logado, setLogado] = useState(false)
   const [nomeUsuario, setNomeUsuario] = useState("")
+  const [menuAberto, setMenuAberto] = useState(false)
+
   const router = useRouter()
   const pathname = usePathname()
 
@@ -31,6 +33,8 @@ export default function RootLayout({
 
         if (data?.name) {
           setNomeUsuario(data.name)
+        } else if (user.email) {
+          setNomeUsuario(user.email)
         }
       }
     }
@@ -48,7 +52,7 @@ export default function RootLayout({
   if (!logado || paginaLogin) {
     return (
       <html>
-        <body style={{ margin: 0 }}>
+        <body style={{ margin: 0, fontFamily: "Arial, sans-serif" }}>
           {children}
         </body>
       </html>
@@ -57,50 +61,165 @@ export default function RootLayout({
 
   return (
     <html>
-      <body style={{ margin: 0, fontFamily: "Arial", background: "#f5f7fb" }}>
-        <div style={{ display: "flex", minHeight: "100vh" }}>
-          <aside
+      <body
+        style={{
+          margin: 0,
+          fontFamily: "Arial, sans-serif",
+          background: "#f5f7fb",
+        }}
+      >
+        {/* TOPO */}
+        <header
+          style={{
+            height: "70px",
+            background: "#ffffff",
+            borderBottom: "1px solid #e5e7eb",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 24px",
+            position: "sticky",
+            top: 0,
+            zIndex: 1000,
+          }}
+        >
+          <div
             style={{
-              width: "240px",
-              background: "#0f172a",
-              color: "white",
-              padding: "24px",
+              display: "flex",
+              alignItems: "center",
+              gap: "16px",
             }}
           >
-            <h2 style={{ marginTop: 0, color: "#60a5fa" }}>GranaFlow</h2>
+            <button
+              onClick={() => setMenuAberto(!menuAberto)}
+              style={{
+                border: "none",
+                background: "transparent",
+                fontSize: "24px",
+                cursor: "pointer",
+                color: "#1d4ed8",
+              }}
+            >
+              ☰
+            </button>
 
-            {nomeUsuario && (
-              <p style={{ fontSize: "14px", color: "#cbd5e1", lineHeight: 1.5 }}>
-                Olá, {nomeUsuario} 👋
-              </p>
-            )}
+            <a
+              href="/dashboard"
+              style={{
+                textDecoration: "none",
+                fontSize: "28px",
+                fontWeight: "bold",
+                color: "#2563eb",
+              }}
+            >
+              GranaFlow
+            </a>
+          </div>
 
-            <nav style={{ marginTop: "30px", display: "flex", flexDirection: "column", gap: "14px" }}>
-              <a href="/" style={{ color: "white", textDecoration: "none" }}>Home</a>
-              <a href="/dashboard" style={{ color: "white", textDecoration: "none" }}>Dashboard</a>
-              <a href="/gastos" style={{ color: "white", textDecoration: "none" }}>Transações</a>
-            </nav>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "14px",
+            }}
+          >
+            <span
+              style={{
+                color: "#374151",
+                fontSize: "14px",
+              }}
+            >
+              👤 {nomeUsuario}
+            </span>
 
             <button
               onClick={sair}
               style={{
-                marginTop: "30px",
-                padding: "10px 14px",
-                borderRadius: "8px",
-                border: "none",
-                background: "#2563eb",
-                color: "white",
+                padding: "10px 16px",
+                borderRadius: "10px",
+                border: "1px solid #d1d5db",
+                background: "#ffffff",
                 cursor: "pointer",
+                fontWeight: "bold",
               }}
             >
               Sair
             </button>
-          </aside>
+          </div>
+        </header>
 
-          <main style={{ flex: 1, padding: "32px" }}>
-            {children}
-          </main>
-        </div>
+        {/* MENU SUSPENSO */}
+        {menuAberto && (
+          <div
+            style={{
+              position: "absolute",
+              top: "72px",
+              left: "24px",
+              background: "#ffffff",
+              border: "1px solid #e5e7eb",
+              borderRadius: "14px",
+              boxShadow: "0 12px 30px rgba(0,0,0,0.10)",
+              padding: "12px",
+              minWidth: "220px",
+              zIndex: 999,
+            }}
+          >
+            <a
+              href="/"
+              style={{
+                display: "block",
+                padding: "12px",
+                textDecoration: "none",
+                color: pathname === "/" ? "#2563eb" : "#111827",
+                fontWeight: pathname === "/" ? "bold" : "normal",
+                borderRadius: "10px",
+                background: pathname === "/" ? "#eff6ff" : "transparent",
+              }}
+            >
+              Home
+            </a>
+
+            <a
+              href="/dashboard"
+              style={{
+                display: "block",
+                padding: "12px",
+                textDecoration: "none",
+                color: pathname === "/dashboard" ? "#2563eb" : "#111827",
+                fontWeight: pathname === "/dashboard" ? "bold" : "normal",
+                borderRadius: "10px",
+                background:
+                  pathname === "/dashboard" ? "#eff6ff" : "transparent",
+              }}
+            >
+              Dashboard
+            </a>
+
+            <a
+              href="/gastos"
+              style={{
+                display: "block",
+                padding: "12px",
+                textDecoration: "none",
+                color: pathname === "/gastos" ? "#2563eb" : "#111827",
+                fontWeight: pathname === "/gastos" ? "bold" : "normal",
+                borderRadius: "10px",
+                background: pathname === "/gastos" ? "#eff6ff" : "transparent",
+              }}
+            >
+              Transações
+            </a>
+          </div>
+        )}
+
+        {/* CONTEÚDO */}
+        <main
+          style={{
+            padding: "32px",
+          }}
+        >
+          {children}
+        </main>
       </body>
     </html>
   )
