@@ -13,15 +13,15 @@ type Transacao = {
 }
 
 const coresCategorias: Record<string, string> = {
-  "Alimentação": "#3b82f6",
-  "Transporte": "#22c55e",
-  "Moradia": "#f97316",
-  "Saúde": "#ef4444",
-  "Lazer": "#a855f7",
-  "Assinaturas": "#eab308",
-  "Salário": "#14b8a6",
-  "Freelance": "#0ea5e9",
-  "Outros": "#6b7280",
+  Alimentação: "#3b82f6",
+  Transporte: "#22c55e",
+  Moradia: "#f97316",
+  Saúde: "#ef4444",
+  Lazer: "#a855f7",
+  Assinaturas: "#eab308",
+  Salário: "#14b8a6",
+  Freelance: "#0ea5e9",
+  Outros: "#6b7280",
 }
 
 const meses = [
@@ -52,6 +52,7 @@ export default function Transacoes() {
   const [editandoId, setEditandoId] = useState<string | null>(null)
   const [mesSelecionado, setMesSelecionado] = useState("")
   const [anoSelecionado, setAnoSelecionado] = useState("")
+  const [periodoRapido, setPeriodoRapido] = useState("")
 
   async function carregarTransacoes() {
     const {
@@ -70,12 +71,42 @@ export default function Transacoes() {
       .select("*")
       .eq("user_id", user.id)
 
-    if (mesSelecionado && anoSelecionado) {
-  const ultimoDia = new Date(Number(anoSelecionado), Number(mesSelecionado), 0).getDate()
-  const inicio = `${anoSelecionado}-${mesSelecionado}-01`
-  const fim = `${anoSelecionado}-${mesSelecionado}-${String(ultimoDia).padStart(2, "0")}`
-  query = query.gte("date", inicio).lte("date", fim)
-}
+    const hoje = new Date()
+
+    if (periodoRapido === "hoje") {
+      const dataHoje = hoje.toISOString().split("T")[0]
+      query = query.eq("date", dataHoje)
+    } else if (periodoRapido === "7dias") {
+      const inicio = new Date()
+      inicio.setDate(hoje.getDate() - 7)
+      query = query.gte("date", inicio.toISOString().split("T")[0])
+    } else if (periodoRapido === "30dias") {
+      const inicio = new Date()
+      inicio.setDate(hoje.getDate() - 30)
+      query = query.gte("date", inicio.toISOString().split("T")[0])
+    } else if (periodoRapido === "mes") {
+      const ano = hoje.getFullYear()
+      const mes = String(hoje.getMonth() + 1).padStart(2, "0")
+      const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate()
+
+      query = query
+        .gte("date", `${ano}-${mes}-01`)
+        .lte("date", `${ano}-${mes}-${String(ultimoDia).padStart(2, "0")}`)
+    } else if (periodoRapido === "ano") {
+      const ano = hoje.getFullYear()
+      query = query.gte("date", `${ano}-01-01`).lte("date", `${ano}-12-31`)
+    } else if (mesSelecionado && anoSelecionado) {
+      const ultimoDia = new Date(
+        Number(anoSelecionado),
+        Number(mesSelecionado),
+        0
+      ).getDate()
+
+      const inicio = `${anoSelecionado}-${mesSelecionado}-01`
+      const fim = `${anoSelecionado}-${mesSelecionado}-${String(ultimoDia).padStart(2, "0")}`
+
+      query = query.gte("date", inicio).lte("date", fim)
+    }
 
     const { data, error } = await query.order("date", { ascending: false })
 
@@ -90,7 +121,7 @@ export default function Transacoes() {
 
   useEffect(() => {
     carregarTransacoes()
-  }, [mesSelecionado, anoSelecionado])
+  }, [mesSelecionado, anoSelecionado, periodoRapido])
 
   function limparFormulario() {
     setTipo("expense")
@@ -99,6 +130,12 @@ export default function Transacoes() {
     setCategoria("")
     setData("")
     setEditandoId(null)
+  }
+
+  function limparFiltros() {
+    setPeriodoRapido("")
+    setMesSelecionado("")
+    setAnoSelecionado("")
   }
 
   async function adicionarTransacao() {
@@ -253,7 +290,7 @@ export default function Transacoes() {
           gap: "10px",
           alignItems: "center",
           flexWrap: "wrap",
-          marginBottom: "24px",
+          marginBottom: "18px",
         }}
       >
         <label style={{ fontWeight: "bold", color: "#334155" }}>
@@ -262,7 +299,10 @@ export default function Transacoes() {
 
         <select
           value={mesSelecionado}
-          onChange={(e) => setMesSelecionado(e.target.value)}
+          onChange={(e) => {
+            setPeriodoRapido("")
+            setMesSelecionado(e.target.value)
+          }}
           style={{
             padding: "10px 12px",
             borderRadius: "10px",
@@ -280,7 +320,10 @@ export default function Transacoes() {
 
         <select
           value={anoSelecionado}
-          onChange={(e) => setAnoSelecionado(e.target.value)}
+          onChange={(e) => {
+            setPeriodoRapido("")
+            setAnoSelecionado(e.target.value)
+          }}
           style={{
             padding: "10px 12px",
             borderRadius: "10px",
@@ -297,10 +340,7 @@ export default function Transacoes() {
         </select>
 
         <button
-          onClick={() => {
-            setMesSelecionado("")
-            setAnoSelecionado("")
-          }}
+          onClick={limparFiltros}
           style={{
             padding: "9px 14px",
             borderRadius: "10px",
@@ -317,27 +357,110 @@ export default function Transacoes() {
 
       <div
         style={{
+          display: "flex",
+          gap: "10px",
+          flexWrap: "wrap",
+          marginBottom: "24px",
+        }}
+      >
+        <button
+          onClick={() => {
+            limparFiltros()
+            setPeriodoRapido("hoje")
+          }}
+          style={botaoPeriodo(periodoRapido === "hoje")}
+        >
+          Hoje
+        </button>
+
+        <button
+          onClick={() => {
+            limparFiltros()
+            setPeriodoRapido("7dias")
+          }}
+          style={botaoPeriodo(periodoRapido === "7dias")}
+        >
+          7 dias
+        </button>
+
+        <button
+          onClick={() => {
+            limparFiltros()
+            setPeriodoRapido("30dias")
+          }}
+          style={botaoPeriodo(periodoRapido === "30dias")}
+        >
+          30 dias
+        </button>
+
+        <button
+          onClick={() => {
+            limparFiltros()
+            setPeriodoRapido("mes")
+          }}
+          style={botaoPeriodo(periodoRapido === "mes")}
+        >
+          Este mês
+        </button>
+
+        <button
+          onClick={() => {
+            limparFiltros()
+            setPeriodoRapido("ano")
+          }}
+          style={botaoPeriodo(periodoRapido === "ano")}
+        >
+          Este ano
+        </button>
+      </div>
+
+      <div
+        style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
           gap: "18px",
           marginBottom: "28px",
         }}
       >
-        <div style={{ background: "linear-gradient(135deg, #2563eb, #1d4ed8)", color: "white", padding: "22px", borderRadius: "18px" }}>
+        <div
+          style={{
+            background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+            color: "white",
+            padding: "22px",
+            borderRadius: "18px",
+            boxShadow: "0 8px 20px rgba(37,99,235,0.2)",
+          }}
+        >
           <div style={{ fontSize: "14px", opacity: 0.9 }}>Saldo</div>
           <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold" }}>
             R$ {saldo.toFixed(2)}
           </div>
         </div>
 
-        <div style={{ background: "linear-gradient(135deg, #14b8a6, #0f766e)", color: "white", padding: "22px", borderRadius: "18px" }}>
+        <div
+          style={{
+            background: "linear-gradient(135deg, #14b8a6, #0f766e)",
+            color: "white",
+            padding: "22px",
+            borderRadius: "18px",
+            boxShadow: "0 8px 20px rgba(20,184,166,0.2)",
+          }}
+        >
           <div style={{ fontSize: "14px", opacity: 0.9 }}>Receitas</div>
           <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold" }}>
             R$ {receitas.toFixed(2)}
           </div>
         </div>
 
-        <div style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)", color: "white", padding: "22px", borderRadius: "18px" }}>
+        <div
+          style={{
+            background: "linear-gradient(135deg, #ef4444, #dc2626)",
+            color: "white",
+            padding: "22px",
+            borderRadius: "18px",
+            boxShadow: "0 8px 20px rgba(239,68,68,0.2)",
+          }}
+        >
           <div style={{ fontSize: "14px", opacity: 0.9 }}>Despesas</div>
           <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold" }}>
             R$ {despesas.toFixed(2)}
@@ -488,7 +611,15 @@ export default function Transacoes() {
         </div>
       </div>
 
-      <div style={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "20px", padding: "24px" }}>
+      <div
+        style={{
+          background: "#ffffff",
+          border: "1px solid #e5e7eb",
+          borderRadius: "20px",
+          padding: "24px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+        }}
+      >
         <h2 style={{ marginTop: 0, marginBottom: "20px", color: "#0f172a" }}>
           Histórico de transações
         </h2>
@@ -584,4 +715,16 @@ export default function Transacoes() {
       </div>
     </div>
   )
+}
+
+function botaoPeriodo(ativo: boolean): React.CSSProperties {
+  return {
+    padding: "9px 14px",
+    borderRadius: "10px",
+    border: ativo ? "none" : "1px solid #d1d5db",
+    background: ativo ? "#2563eb" : "#ffffff",
+    color: ativo ? "white" : "#0f172a",
+    cursor: "pointer",
+    fontWeight: "bold",
+  }
 }
