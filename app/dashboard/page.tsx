@@ -8,6 +8,11 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
 } from "recharts"
 
 type Transacao = {
@@ -26,15 +31,15 @@ type CategoriaResumo = {
 }
 
 const coresCategorias: Record<string, string> = {
-  "Alimentação": "#3b82f6",
-  "Transporte": "#22c55e",
-  "Moradia": "#f97316",
-  "Saúde": "#ef4444",
-  "Lazer": "#a855f7",
-  "Assinaturas": "#eab308",
-  "Salário": "#14b8a6",
-  "Freelance": "#0ea5e9",
-  "Outros": "#6b7280",
+  Alimentação: "#3b82f6",
+  Transporte: "#22c55e",
+  Moradia: "#f97316",
+  Saúde: "#ef4444",
+  Lazer: "#a855f7",
+  Assinaturas: "#eab308",
+  Salário: "#14b8a6",
+  Freelance: "#0ea5e9",
+  Outros: "#6b7280",
 }
 
 const meses = [
@@ -59,6 +64,7 @@ export default function Dashboard() {
   const [lista, setLista] = useState<Transacao[]>([])
   const [mesSelecionado, setMesSelecionado] = useState("")
   const [anoSelecionado, setAnoSelecionado] = useState("")
+  const [periodoRapido, setPeriodoRapido] = useState("")
 
   async function carregarTransacoes() {
     const {
@@ -77,12 +83,42 @@ export default function Dashboard() {
       .select("*")
       .eq("user_id", user.id)
 
-   if (mesSelecionado && anoSelecionado) {
-  const ultimoDia = new Date(Number(anoSelecionado), Number(mesSelecionado), 0).getDate()
-  const inicio = `${anoSelecionado}-${mesSelecionado}-01`
-  const fim = `${anoSelecionado}-${mesSelecionado}-${String(ultimoDia).padStart(2, "0")}`
-  query = query.gte("date", inicio).lte("date", fim)
-}
+    const hoje = new Date()
+
+    if (periodoRapido === "hoje") {
+      const dataHoje = hoje.toISOString().split("T")[0]
+      query = query.eq("date", dataHoje)
+    } else if (periodoRapido === "7dias") {
+      const inicio = new Date()
+      inicio.setDate(hoje.getDate() - 7)
+      query = query.gte("date", inicio.toISOString().split("T")[0])
+    } else if (periodoRapido === "30dias") {
+      const inicio = new Date()
+      inicio.setDate(hoje.getDate() - 30)
+      query = query.gte("date", inicio.toISOString().split("T")[0])
+    } else if (periodoRapido === "mes") {
+      const ano = hoje.getFullYear()
+      const mes = String(hoje.getMonth() + 1).padStart(2, "0")
+      const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate()
+
+      query = query
+        .gte("date", `${ano}-${mes}-01`)
+        .lte("date", `${ano}-${mes}-${String(ultimoDia).padStart(2, "0")}`)
+    } else if (periodoRapido === "ano") {
+      const ano = hoje.getFullYear()
+      query = query.gte("date", `${ano}-01-01`).lte("date", `${ano}-12-31`)
+    } else if (mesSelecionado && anoSelecionado) {
+      const ultimoDia = new Date(
+        Number(anoSelecionado),
+        Number(mesSelecionado),
+        0
+      ).getDate()
+
+      const inicio = `${anoSelecionado}-${mesSelecionado}-01`
+      const fim = `${anoSelecionado}-${mesSelecionado}-${String(ultimoDia).padStart(2, "0")}`
+
+      query = query.gte("date", inicio).lte("date", fim)
+    }
 
     const { data, error } = await query.order("date", { ascending: false })
 
@@ -97,7 +133,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     carregarTransacoes()
-  }, [mesSelecionado, anoSelecionado])
+  }, [mesSelecionado, anoSelecionado, periodoRapido])
 
   const receitas = lista
     .filter((item) => item.type === "income")
@@ -108,6 +144,7 @@ export default function Dashboard() {
     .reduce((acc, item) => acc + item.amount, 0)
 
   const saldo = receitas - despesas
+
   const despesasLista = lista.filter((item) => item.type === "expense")
 
   const resumoCategorias: CategoriaResumo[] = Object.values(
@@ -131,9 +168,53 @@ export default function Dashboard() {
         )
       : null
 
+  const evolucaoMensal = Object.values(
+    lista.reduce((acc: any, item) => {
+      const [ano, mes] = item.date.split("-")
+      const chave = `${mes}/${ano}`
+
+      if (!acc[chave]) {
+        acc[chave] = {
+          periodo: chave,
+          receitas: 0,
+          despesas: 0,
+        }
+      }
+
+      if (item.type === "income") {
+        acc[chave].receitas += item.amount
+      } else {
+        acc[chave].despesas += item.amount
+      }
+
+      return acc
+    }, {})
+  ) as { periodo: string; receitas: number; despesas: number }[]
+
+  const saldoAcumuladoMensal = evolucaoMensal.reduce(
+    (acc: { periodo: string; saldo: number }[], item) => {
+      const ultimoSaldo = acc.length > 0 ? acc[acc.length - 1].saldo : 0
+      const saldoAtual = ultimoSaldo + item.receitas - item.despesas
+
+      acc.push({
+        periodo: item.periodo,
+        saldo: saldoAtual,
+      })
+
+      return acc
+    },
+    []
+  )
+
   function formatarData(data: string) {
     const [ano, mes, dia] = data.split("-")
     return `${dia}/${mes}/${ano}`
+  }
+
+  function limparFiltros() {
+    setPeriodoRapido("")
+    setMesSelecionado("")
+    setAnoSelecionado("")
   }
 
   return (
@@ -176,7 +257,10 @@ export default function Dashboard() {
 
           <select
             value={mesSelecionado}
-            onChange={(e) => setMesSelecionado(e.target.value)}
+            onChange={(e) => {
+              setPeriodoRapido("")
+              setMesSelecionado(e.target.value)
+            }}
             style={{
               padding: "10px 12px",
               borderRadius: "10px",
@@ -194,7 +278,10 @@ export default function Dashboard() {
 
           <select
             value={anoSelecionado}
-            onChange={(e) => setAnoSelecionado(e.target.value)}
+            onChange={(e) => {
+              setPeriodoRapido("")
+              setAnoSelecionado(e.target.value)
+            }}
             style={{
               padding: "10px 12px",
               borderRadius: "10px",
@@ -211,10 +298,7 @@ export default function Dashboard() {
           </select>
 
           <button
-            onClick={() => {
-              setMesSelecionado("")
-              setAnoSelecionado("")
-            }}
+            onClick={limparFiltros}
             style={{
               padding: "9px 14px",
               borderRadius: "10px",
@@ -232,6 +316,65 @@ export default function Dashboard() {
 
       <div
         style={{
+          display: "flex",
+          gap: "10px",
+          flexWrap: "wrap",
+          marginBottom: "20px",
+        }}
+      >
+        <button
+          onClick={() => {
+            limparFiltros()
+            setPeriodoRapido("hoje")
+          }}
+          style={botaoPeriodo(periodoRapido === "hoje")}
+        >
+          Hoje
+        </button>
+
+        <button
+          onClick={() => {
+            limparFiltros()
+            setPeriodoRapido("7dias")
+          }}
+          style={botaoPeriodo(periodoRapido === "7dias")}
+        >
+          7 dias
+        </button>
+
+        <button
+          onClick={() => {
+            limparFiltros()
+            setPeriodoRapido("30dias")
+          }}
+          style={botaoPeriodo(periodoRapido === "30dias")}
+        >
+          30 dias
+        </button>
+
+        <button
+          onClick={() => {
+            limparFiltros()
+            setPeriodoRapido("mes")
+          }}
+          style={botaoPeriodo(periodoRapido === "mes")}
+        >
+          Este mês
+        </button>
+
+        <button
+          onClick={() => {
+            limparFiltros()
+            setPeriodoRapido("ano")
+          }}
+          style={botaoPeriodo(periodoRapido === "ano")}
+        >
+          Este ano
+        </button>
+      </div>
+
+      <div
+        style={{
           background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
           color: "white",
           borderRadius: "24px",
@@ -241,7 +384,14 @@ export default function Dashboard() {
         }}
       >
         <div style={{ fontSize: "15px", opacity: 0.9 }}>Saldo disponível</div>
-        <div style={{ fontSize: "42px", fontWeight: "bold", marginTop: "10px" }}>
+
+        <div
+          style={{
+            fontSize: "42px",
+            fontWeight: "bold",
+            marginTop: "10px",
+          }}
+        >
           R$ {saldo.toFixed(2)}
         </div>
 
@@ -286,30 +436,60 @@ export default function Dashboard() {
           marginBottom: "28px",
         }}
       >
-        <div style={{ background: "#fff", padding: "22px", borderRadius: "18px", border: "1px solid #e5e7eb" }}>
+        <div style={cardResumo}>
           <div style={{ color: "#64748b", fontSize: "14px" }}>Receitas</div>
-          <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold", color: "#0f766e" }}>
+          <div
+            style={{
+              marginTop: "10px",
+              fontSize: "30px",
+              fontWeight: "bold",
+              color: "#0f766e",
+            }}
+          >
             R$ {receitas.toFixed(2)}
           </div>
         </div>
 
-        <div style={{ background: "#fff", padding: "22px", borderRadius: "18px", border: "1px solid #e5e7eb" }}>
+        <div style={cardResumo}>
           <div style={{ color: "#64748b", fontSize: "14px" }}>Despesas</div>
-          <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold", color: "#dc2626" }}>
+          <div
+            style={{
+              marginTop: "10px",
+              fontSize: "30px",
+              fontWeight: "bold",
+              color: "#dc2626",
+            }}
+          >
             R$ {despesas.toFixed(2)}
           </div>
         </div>
 
-        <div style={{ background: "#fff", padding: "22px", borderRadius: "18px", border: "1px solid #e5e7eb" }}>
+        <div style={cardResumo}>
           <div style={{ color: "#64748b", fontSize: "14px" }}>Transações</div>
-          <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold", color: "#0f172a" }}>
+          <div
+            style={{
+              marginTop: "10px",
+              fontSize: "30px",
+              fontWeight: "bold",
+              color: "#0f172a",
+            }}
+          >
             {lista.length}
           </div>
         </div>
 
-        <div style={{ background: "#fff", padding: "22px", borderRadius: "18px", border: "1px solid #e5e7eb" }}>
-          <div style={{ color: "#64748b", fontSize: "14px" }}>Maior categoria</div>
-          <div style={{ marginTop: "10px", fontSize: "24px", fontWeight: "bold", color: "#1d4ed8" }}>
+        <div style={cardResumo}>
+          <div style={{ color: "#64748b", fontSize: "14px" }}>
+            Maior categoria
+          </div>
+          <div
+            style={{
+              marginTop: "10px",
+              fontSize: "24px",
+              fontWeight: "bold",
+              color: "#1d4ed8",
+            }}
+          >
             {maiorCategoria ? maiorCategoria.name : "Sem dados"}
           </div>
         </div>
@@ -324,10 +504,8 @@ export default function Dashboard() {
           marginBottom: "28px",
         }}
       >
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "20px", padding: "24px" }}>
-          <h2 style={{ marginTop: 0, marginBottom: "20px", color: "#0f172a" }}>
-            Despesas por categoria
-          </h2>
+        <div style={cardGrande}>
+          <h2 style={tituloCard}>Despesas por categoria</h2>
 
           {resumoCategorias.length === 0 ? (
             <p style={{ color: "#64748b" }}>Nenhum dado para o gráfico.</p>
@@ -335,7 +513,13 @@ export default function Dashboard() {
             <div style={{ width: "100%", height: 360 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={resumoCategorias} dataKey="value" nameKey="name" outerRadius={110} label>
+                  <Pie
+                    data={resumoCategorias}
+                    dataKey="value"
+                    nameKey="name"
+                    outerRadius={110}
+                    label
+                  >
                     {resumoCategorias.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
@@ -351,10 +535,8 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "20px", padding: "24px" }}>
-          <h2 style={{ marginTop: 0, marginBottom: "20px", color: "#0f172a" }}>
-            Resumo por categoria
-          </h2>
+        <div style={cardGrande}>
+          <h2 style={tituloCard}>Resumo por categoria</h2>
 
           {resumoCategorias.length === 0 ? (
             <p style={{ color: "#64748b" }}>Nenhuma despesa cadastrada.</p>
@@ -398,10 +580,50 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "20px", padding: "24px" }}>
-        <h2 style={{ marginTop: 0, marginBottom: "20px", color: "#0f172a" }}>
-          Histórico de transações
-        </h2>
+      <div style={cardGrande}>
+        <h2 style={tituloCard}>Evolução mensal</h2>
+
+        {evolucaoMensal.length === 0 ? (
+          <p style={{ color: "#64748b" }}>Sem dados para exibir.</p>
+        ) : (
+          <div style={{ width: "100%", height: 320 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={evolucaoMensal}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="periodo" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="receitas" fill="#14b8a6" name="Receitas" />
+                <Bar dataKey="despesas" fill="#ef4444" name="Despesas" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      <div style={{ ...cardGrande, marginTop: "28px", marginBottom: "28px" }}>
+        <h2 style={tituloCard}>Saldo acumulado por mês</h2>
+
+        {saldoAcumuladoMensal.length === 0 ? (
+          <p style={{ color: "#64748b" }}>Sem dados para exibir.</p>
+        ) : (
+          <div style={{ width: "100%", height: 320 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={saldoAcumuladoMensal}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="periodo" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="saldo" fill="#2563eb" name="Saldo acumulado" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      <div style={cardGrande}>
+        <h2 style={tituloCard}>Histórico de transações</h2>
 
         {lista.length === 0 ? (
           <p style={{ color: "#64748b" }}>Nenhuma transação cadastrada.</p>
@@ -462,4 +684,38 @@ export default function Dashboard() {
       </div>
     </div>
   )
+}
+
+const cardResumo: React.CSSProperties = {
+  background: "#ffffff",
+  padding: "22px",
+  borderRadius: "18px",
+  border: "1px solid #e5e7eb",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+}
+
+const cardGrande: React.CSSProperties = {
+  background: "#ffffff",
+  border: "1px solid #e5e7eb",
+  borderRadius: "20px",
+  padding: "24px",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+}
+
+const tituloCard: React.CSSProperties = {
+  marginTop: 0,
+  marginBottom: "20px",
+  color: "#0f172a",
+}
+
+function botaoPeriodo(ativo: boolean): React.CSSProperties {
+  return {
+    padding: "9px 14px",
+    borderRadius: "10px",
+    border: ativo ? "none" : "1px solid #d1d5db",
+    background: ativo ? "#2563eb" : "#ffffff",
+    color: ativo ? "white" : "#0f172a",
+    cursor: "pointer",
+    fontWeight: "bold",
+  }
 }
