@@ -193,6 +193,21 @@ export default function RootLayout({
     >
       Transações
     </a>
+
+<a
+  href="/investimentos"
+  style={{
+    display: "block",
+    padding: "12px",
+    textDecoration: "none",
+    color: pathname === "/investimentos" ? "#2563eb" : "#111827",
+    fontWeight: pathname === "/investimentos" ? "bold" : "normal",
+    borderRadius: "10px",
+    background: pathname === "/investimentos" ? "#eff6ff" : "transparent",
+  }}
+>
+  Investimentos
+</a>
   </div>
 )}
 
