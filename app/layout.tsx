@@ -149,68 +149,52 @@ export default function RootLayout({
         </header>
 
         {/* MENU SUSPENSO */}
-        {menuAberto && (
-          <div
-            style={{
-              position: "absolute",
-              top: "72px",
-              left: "24px",
-              background: "#ffffff",
-              border: "1px solid #e5e7eb",
-              borderRadius: "14px",
-              boxShadow: "0 12px 30px rgba(0,0,0,0.10)",
-              padding: "12px",
-              minWidth: "220px",
-              zIndex: 999,
-            }}
-          >
-            <a
-              href="/"
-              style={{
-                display: "block",
-                padding: "12px",
-                textDecoration: "none",
-                color: pathname === "/" ? "#2563eb" : "#111827",
-                fontWeight: pathname === "/" ? "bold" : "normal",
-                borderRadius: "10px",
-                background: pathname === "/" ? "#eff6ff" : "transparent",
-              }}
-            >
-              Home
-            </a>
+{menuAberto && (
+  <div
+    style={{
+      position: "absolute",
+      top: "72px",
+      left: "24px",
+      background: "#ffffff",
+      border: "1px solid #e5e7eb",
+      borderRadius: "14px",
+      boxShadow: "0 12px 30px rgba(0,0,0,0.10)",
+      padding: "12px",
+      minWidth: "220px",
+      zIndex: 999,
+    }}
+  >
+    <a
+      href="/dashboard"
+      style={{
+        display: "block",
+        padding: "12px",
+        textDecoration: "none",
+        color: pathname === "/dashboard" ? "#2563eb" : "#111827",
+        fontWeight: pathname === "/dashboard" ? "bold" : "normal",
+        borderRadius: "10px",
+        background: pathname === "/dashboard" ? "#eff6ff" : "transparent",
+      }}
+    >
+      Dashboard
+    </a>
 
-            <a
-              href="/dashboard"
-              style={{
-                display: "block",
-                padding: "12px",
-                textDecoration: "none",
-                color: pathname === "/dashboard" ? "#2563eb" : "#111827",
-                fontWeight: pathname === "/dashboard" ? "bold" : "normal",
-                borderRadius: "10px",
-                background:
-                  pathname === "/dashboard" ? "#eff6ff" : "transparent",
-              }}
-            >
-              Dashboard
-            </a>
-
-            <a
-              href="/gastos"
-              style={{
-                display: "block",
-                padding: "12px",
-                textDecoration: "none",
-                color: pathname === "/gastos" ? "#2563eb" : "#111827",
-                fontWeight: pathname === "/gastos" ? "bold" : "normal",
-                borderRadius: "10px",
-                background: pathname === "/gastos" ? "#eff6ff" : "transparent",
-              }}
-            >
-              Transações
-            </a>
-          </div>
-        )}
+    <a
+      href="/gastos"
+      style={{
+        display: "block",
+        padding: "12px",
+        textDecoration: "none",
+        color: pathname === "/gastos" ? "#2563eb" : "#111827",
+        fontWeight: pathname === "/gastos" ? "bold" : "normal",
+        borderRadius: "10px",
+        background: pathname === "/gastos" ? "#eff6ff" : "transparent",
+      }}
+    >
+      Transações
+    </a>
+  </div>
+)}
 
         {/* CONTEÚDO */}
         <main

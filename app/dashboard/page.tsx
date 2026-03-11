@@ -37,9 +37,28 @@ const coresCategorias: Record<string, string> = {
   "Outros": "#6b7280",
 }
 
+const meses = [
+  { value: "01", label: "Janeiro" },
+  { value: "02", label: "Fevereiro" },
+  { value: "03", label: "Março" },
+  { value: "04", label: "Abril" },
+  { value: "05", label: "Maio" },
+  { value: "06", label: "Junho" },
+  { value: "07", label: "Julho" },
+  { value: "08", label: "Agosto" },
+  { value: "09", label: "Setembro" },
+  { value: "10", label: "Outubro" },
+  { value: "11", label: "Novembro" },
+  { value: "12", label: "Dezembro" },
+]
+
+const anoAtual = new Date().getFullYear()
+const anos = [anoAtual - 1, anoAtual, anoAtual + 1]
+
 export default function Dashboard() {
   const [lista, setLista] = useState<Transacao[]>([])
   const [mesSelecionado, setMesSelecionado] = useState("")
+  const [anoSelecionado, setAnoSelecionado] = useState("")
 
   async function carregarTransacoes() {
     const {
@@ -58,11 +77,12 @@ export default function Dashboard() {
       .select("*")
       .eq("user_id", user.id)
 
-    if (mesSelecionado) {
-      const inicio = `${mesSelecionado}-01`
-      const fim = `${mesSelecionado}-31`
-      query = query.gte("date", inicio).lte("date", fim)
-    }
+   if (mesSelecionado && anoSelecionado) {
+  const ultimoDia = new Date(Number(anoSelecionado), Number(mesSelecionado), 0).getDate()
+  const inicio = `${anoSelecionado}-${mesSelecionado}-01`
+  const fim = `${anoSelecionado}-${mesSelecionado}-${String(ultimoDia).padStart(2, "0")}`
+  query = query.gte("date", inicio).lte("date", fim)
+}
 
     const { data, error } = await query.order("date", { ascending: false })
 
@@ -77,7 +97,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     carregarTransacoes()
-  }, [mesSelecionado])
+  }, [mesSelecionado, anoSelecionado])
 
   const receitas = lista
     .filter((item) => item.type === "income")
@@ -88,7 +108,6 @@ export default function Dashboard() {
     .reduce((acc, item) => acc + item.amount, 0)
 
   const saldo = receitas - despesas
-
   const despesasLista = lista.filter((item) => item.type === "expense")
 
   const resumoCategorias: CategoriaResumo[] = Object.values(
@@ -130,22 +149,10 @@ export default function Dashboard() {
         }}
       >
         <div>
-          <h1
-            style={{
-              fontSize: "36px",
-              margin: 0,
-              color: "#0f172a",
-            }}
-          >
+          <h1 style={{ fontSize: "36px", margin: 0, color: "#0f172a" }}>
             Dashboard
           </h1>
-          <p
-            style={{
-              marginTop: "8px",
-              color: "#64748b",
-              fontSize: "15px",
-            }}
-          >
+          <p style={{ marginTop: "8px", color: "#64748b", fontSize: "15px" }}>
             Acompanhe seu saldo, receitas e despesas em tempo real.
           </p>
         </div>
@@ -164,23 +171,50 @@ export default function Dashboard() {
           }}
         >
           <label style={{ fontWeight: "bold", color: "#334155" }}>
-            Filtrar por mês:
+            Filtrar por período:
           </label>
 
-          <input
-            type="month"
+          <select
             value={mesSelecionado}
             onChange={(e) => setMesSelecionado(e.target.value)}
             style={{
-              padding: "8px 12px",
+              padding: "10px 12px",
               borderRadius: "10px",
               border: "1px solid #d1d5db",
-              fontSize: "14px",
+              background: "white",
             }}
-          />
+          >
+            <option value="">Mês</option>
+            {meses.map((mes) => (
+              <option key={mes.value} value={mes.value}>
+                {mes.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={anoSelecionado}
+            onChange={(e) => setAnoSelecionado(e.target.value)}
+            style={{
+              padding: "10px 12px",
+              borderRadius: "10px",
+              border: "1px solid #d1d5db",
+              background: "white",
+            }}
+          >
+            <option value="">Ano</option>
+            {anos.map((ano) => (
+              <option key={ano} value={String(ano)}>
+                {ano}
+              </option>
+            ))}
+          </select>
 
           <button
-            onClick={() => setMesSelecionado("")}
+            onClick={() => {
+              setMesSelecionado("")
+              setAnoSelecionado("")
+            }}
             style={{
               padding: "9px 14px",
               borderRadius: "10px",
@@ -206,17 +240,8 @@ export default function Dashboard() {
           boxShadow: "0 12px 30px rgba(37,99,235,0.25)",
         }}
       >
-        <div style={{ fontSize: "15px", opacity: 0.9 }}>
-          Saldo disponível
-        </div>
-
-        <div
-          style={{
-            fontSize: "42px",
-            fontWeight: "bold",
-            marginTop: "10px",
-          }}
-        >
+        <div style={{ fontSize: "15px", opacity: 0.9 }}>Saldo disponível</div>
+        <div style={{ fontSize: "42px", fontWeight: "bold", marginTop: "10px" }}>
           R$ {saldo.toFixed(2)}
         </div>
 
@@ -261,92 +286,30 @@ export default function Dashboard() {
           marginBottom: "28px",
         }}
       >
-        <div
-          style={{
-            background: "#ffffff",
-            padding: "22px",
-            borderRadius: "18px",
-            border: "1px solid #e5e7eb",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-          }}
-        >
+        <div style={{ background: "#fff", padding: "22px", borderRadius: "18px", border: "1px solid #e5e7eb" }}>
           <div style={{ color: "#64748b", fontSize: "14px" }}>Receitas</div>
-          <div
-            style={{
-              marginTop: "10px",
-              fontSize: "30px",
-              fontWeight: "bold",
-              color: "#0f766e",
-            }}
-          >
+          <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold", color: "#0f766e" }}>
             R$ {receitas.toFixed(2)}
           </div>
         </div>
 
-        <div
-          style={{
-            background: "#ffffff",
-            padding: "22px",
-            borderRadius: "18px",
-            border: "1px solid #e5e7eb",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-          }}
-        >
+        <div style={{ background: "#fff", padding: "22px", borderRadius: "18px", border: "1px solid #e5e7eb" }}>
           <div style={{ color: "#64748b", fontSize: "14px" }}>Despesas</div>
-          <div
-            style={{
-              marginTop: "10px",
-              fontSize: "30px",
-              fontWeight: "bold",
-              color: "#dc2626",
-            }}
-          >
+          <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold", color: "#dc2626" }}>
             R$ {despesas.toFixed(2)}
           </div>
         </div>
 
-        <div
-          style={{
-            background: "#ffffff",
-            padding: "22px",
-            borderRadius: "18px",
-            border: "1px solid #e5e7eb",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-          }}
-        >
+        <div style={{ background: "#fff", padding: "22px", borderRadius: "18px", border: "1px solid #e5e7eb" }}>
           <div style={{ color: "#64748b", fontSize: "14px" }}>Transações</div>
-          <div
-            style={{
-              marginTop: "10px",
-              fontSize: "30px",
-              fontWeight: "bold",
-              color: "#0f172a",
-            }}
-          >
+          <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold", color: "#0f172a" }}>
             {lista.length}
           </div>
         </div>
 
-        <div
-          style={{
-            background: "#ffffff",
-            padding: "22px",
-            borderRadius: "18px",
-            border: "1px solid #e5e7eb",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-          }}
-        >
-          <div style={{ color: "#64748b", fontSize: "14px" }}>
-            Maior categoria
-          </div>
-          <div
-            style={{
-              marginTop: "10px",
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "#1d4ed8",
-            }}
-          >
+        <div style={{ background: "#fff", padding: "22px", borderRadius: "18px", border: "1px solid #e5e7eb" }}>
+          <div style={{ color: "#64748b", fontSize: "14px" }}>Maior categoria</div>
+          <div style={{ marginTop: "10px", fontSize: "24px", fontWeight: "bold", color: "#1d4ed8" }}>
             {maiorCategoria ? maiorCategoria.name : "Sem dados"}
           </div>
         </div>
@@ -361,15 +324,7 @@ export default function Dashboard() {
           marginBottom: "28px",
         }}
       >
-        <div
-          style={{
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: "20px",
-            padding: "24px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-          }}
-        >
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "20px", padding: "24px" }}>
           <h2 style={{ marginTop: 0, marginBottom: "20px", color: "#0f172a" }}>
             Despesas por categoria
           </h2>
@@ -380,13 +335,7 @@ export default function Dashboard() {
             <div style={{ width: "100%", height: 360 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={resumoCategorias}
-                    dataKey="value"
-                    nameKey="name"
-                    outerRadius={110}
-                    label
-                  >
+                  <Pie data={resumoCategorias} dataKey="value" nameKey="name" outerRadius={110} label>
                     {resumoCategorias.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
@@ -402,15 +351,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div
-          style={{
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: "20px",
-            padding: "24px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-          }}
-        >
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "20px", padding: "24px" }}>
           <h2 style={{ marginTop: 0, marginBottom: "20px", color: "#0f172a" }}>
             Resumo por categoria
           </h2>
@@ -457,15 +398,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div
-        style={{
-          background: "#ffffff",
-          border: "1px solid #e5e7eb",
-          borderRadius: "20px",
-          padding: "24px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-        }}
-      >
+      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "20px", padding: "24px" }}>
         <h2 style={{ marginTop: 0, marginBottom: "20px", color: "#0f172a" }}>
           Histórico de transações
         </h2>
@@ -521,9 +454,7 @@ export default function Dashboard() {
                   {item.type === "income" ? "+" : "-"}R$ {item.amount.toFixed(2)}
                 </div>
 
-                <div style={{ color: "#64748b" }}>
-                  {formatarData(item.date)}
-                </div>
+                <div style={{ color: "#64748b" }}>{formatarData(item.date)}</div>
               </div>
             ))}
           </div>

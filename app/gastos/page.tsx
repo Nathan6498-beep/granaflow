@@ -24,6 +24,24 @@ const coresCategorias: Record<string, string> = {
   "Outros": "#6b7280",
 }
 
+const meses = [
+  { value: "01", label: "Janeiro" },
+  { value: "02", label: "Fevereiro" },
+  { value: "03", label: "Março" },
+  { value: "04", label: "Abril" },
+  { value: "05", label: "Maio" },
+  { value: "06", label: "Junho" },
+  { value: "07", label: "Julho" },
+  { value: "08", label: "Agosto" },
+  { value: "09", label: "Setembro" },
+  { value: "10", label: "Outubro" },
+  { value: "11", label: "Novembro" },
+  { value: "12", label: "Dezembro" },
+]
+
+const anoAtual = new Date().getFullYear()
+const anos = [anoAtual - 1, anoAtual, anoAtual + 1]
+
 export default function Transacoes() {
   const [tipo, setTipo] = useState("expense")
   const [descricao, setDescricao] = useState("")
@@ -32,6 +50,8 @@ export default function Transacoes() {
   const [data, setData] = useState("")
   const [lista, setLista] = useState<Transacao[]>([])
   const [editandoId, setEditandoId] = useState<string | null>(null)
+  const [mesSelecionado, setMesSelecionado] = useState("")
+  const [anoSelecionado, setAnoSelecionado] = useState("")
 
   async function carregarTransacoes() {
     const {
@@ -45,11 +65,19 @@ export default function Transacoes() {
       return
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("transactions")
       .select("*")
       .eq("user_id", user.id)
-      .order("date", { ascending: false })
+
+    if (mesSelecionado && anoSelecionado) {
+  const ultimoDia = new Date(Number(anoSelecionado), Number(mesSelecionado), 0).getDate()
+  const inicio = `${anoSelecionado}-${mesSelecionado}-01`
+  const fim = `${anoSelecionado}-${mesSelecionado}-${String(ultimoDia).padStart(2, "0")}`
+  query = query.gte("date", inicio).lte("date", fim)
+}
+
+    const { data, error } = await query.order("date", { ascending: false })
 
     if (error) {
       console.error("Erro ao carregar transações:", error.message)
@@ -62,7 +90,7 @@ export default function Transacoes() {
 
   useEffect(() => {
     carregarTransacoes()
-  }, [])
+  }, [mesSelecionado, anoSelecionado])
 
   function limparFormulario() {
     setTipo("expense")
@@ -206,24 +234,85 @@ export default function Transacoes() {
   return (
     <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
       <div style={{ marginBottom: "28px" }}>
-        <h1
-          style={{
-            fontSize: "36px",
-            margin: 0,
-            color: "#0f172a",
-          }}
-        >
+        <h1 style={{ fontSize: "36px", margin: 0, color: "#0f172a" }}>
           Transações
         </h1>
-        <p
-          style={{
-            marginTop: "8px",
-            color: "#64748b",
-            fontSize: "15px",
-          }}
-        >
+        <p style={{ marginTop: "8px", color: "#64748b", fontSize: "15px" }}>
           Registre e acompanhe suas receitas e despesas.
         </p>
+      </div>
+
+      <div
+        style={{
+          background: "#ffffff",
+          border: "1px solid #e5e7eb",
+          borderRadius: "14px",
+          padding: "14px 16px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+          display: "flex",
+          gap: "10px",
+          alignItems: "center",
+          flexWrap: "wrap",
+          marginBottom: "24px",
+        }}
+      >
+        <label style={{ fontWeight: "bold", color: "#334155" }}>
+          Filtrar por período:
+        </label>
+
+        <select
+          value={mesSelecionado}
+          onChange={(e) => setMesSelecionado(e.target.value)}
+          style={{
+            padding: "10px 12px",
+            borderRadius: "10px",
+            border: "1px solid #d1d5db",
+            background: "white",
+          }}
+        >
+          <option value="">Mês</option>
+          {meses.map((mes) => (
+            <option key={mes.value} value={mes.value}>
+              {mes.label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={anoSelecionado}
+          onChange={(e) => setAnoSelecionado(e.target.value)}
+          style={{
+            padding: "10px 12px",
+            borderRadius: "10px",
+            border: "1px solid #d1d5db",
+            background: "white",
+          }}
+        >
+          <option value="">Ano</option>
+          {anos.map((ano) => (
+            <option key={ano} value={String(ano)}>
+              {ano}
+            </option>
+          ))}
+        </select>
+
+        <button
+          onClick={() => {
+            setMesSelecionado("")
+            setAnoSelecionado("")
+          }}
+          style={{
+            padding: "9px 14px",
+            borderRadius: "10px",
+            border: "none",
+            background: "#2563eb",
+            color: "white",
+            cursor: "pointer",
+            fontWeight: "bold",
+          }}
+        >
+          Limpar
+        </button>
       </div>
 
       <div
@@ -234,45 +323,21 @@ export default function Transacoes() {
           marginBottom: "28px",
         }}
       >
-        <div
-          style={{
-            background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-            color: "white",
-            padding: "22px",
-            borderRadius: "18px",
-            boxShadow: "0 8px 20px rgba(37,99,235,0.2)",
-          }}
-        >
+        <div style={{ background: "linear-gradient(135deg, #2563eb, #1d4ed8)", color: "white", padding: "22px", borderRadius: "18px" }}>
           <div style={{ fontSize: "14px", opacity: 0.9 }}>Saldo</div>
           <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold" }}>
             R$ {saldo.toFixed(2)}
           </div>
         </div>
 
-        <div
-          style={{
-            background: "linear-gradient(135deg, #14b8a6, #0f766e)",
-            color: "white",
-            padding: "22px",
-            borderRadius: "18px",
-            boxShadow: "0 8px 20px rgba(20,184,166,0.2)",
-          }}
-        >
+        <div style={{ background: "linear-gradient(135deg, #14b8a6, #0f766e)", color: "white", padding: "22px", borderRadius: "18px" }}>
           <div style={{ fontSize: "14px", opacity: 0.9 }}>Receitas</div>
           <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold" }}>
             R$ {receitas.toFixed(2)}
           </div>
         </div>
 
-        <div
-          style={{
-            background: "linear-gradient(135deg, #ef4444, #dc2626)",
-            color: "white",
-            padding: "22px",
-            borderRadius: "18px",
-            boxShadow: "0 8px 20px rgba(239,68,68,0.2)",
-          }}
-        >
+        <div style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)", color: "white", padding: "22px", borderRadius: "18px" }}>
           <div style={{ fontSize: "14px", opacity: 0.9 }}>Despesas</div>
           <div style={{ marginTop: "10px", fontSize: "30px", fontWeight: "bold" }}>
             R$ {despesas.toFixed(2)}
@@ -423,15 +488,7 @@ export default function Transacoes() {
         </div>
       </div>
 
-      <div
-        style={{
-          background: "#ffffff",
-          border: "1px solid #e5e7eb",
-          borderRadius: "20px",
-          padding: "24px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-        }}
-      >
+      <div style={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "20px", padding: "24px" }}>
         <h2 style={{ marginTop: 0, marginBottom: "20px", color: "#0f172a" }}>
           Histórico de transações
         </h2>
@@ -488,9 +545,7 @@ export default function Transacoes() {
                   {item.type === "income" ? "+" : "-"}R$ {item.amount.toFixed(2)}
                 </div>
 
-                <div style={{ color: "#64748b" }}>
-                  {formatarData(item.date)}
-                </div>
+                <div style={{ color: "#64748b" }}>{formatarData(item.date)}</div>
 
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                   <button
